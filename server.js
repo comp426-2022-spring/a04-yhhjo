@@ -1,33 +1,95 @@
-// Import coin module
+// Import modules
 import { coinFlip, coinFlips, flipACoin, countFlips } from "./modules/coin.mjs";
 import { createRequire } from 'module';
-import { getSystemErrorMap } from "util";
 import { exit } from "process";
 const require = createRequire(import.meta.url);
-const HELP = "server.js [options]\n\n--port\t\tSet the port number for the server to listen on. Must be an integer between 1 and 65535.\n\n" +
-            "--debug\t\tIf set to `true`, creates endlpoints /app/log/access/ which returns\n" +
-            "\t\ta JSON access log from the database and /app/error which throws \n\t\tan error with the message \"Error test successful.\" Defaults to `false`.\n\n"+
-            "--log		If set to false, no log files are written. Defaults to true. Logs are always written to database.\n\n" +
-            "--help\t\tReturn this message and exit."
+import {db} from './modules/database.mjs'
+const express = require('express')
+const fs = require('fs')
+const morgan = require('morgan')
 
+const HELP = (`
+server.js [options]
+
+--port	Set the port number for the server to listen on. Must be an integer
+            between 1 and 65535.
+
+--debug	If set to true, creates endlpoints /app/log/access/ which returns
+            a JSON access log from the database and /app/error which throws 
+            an error with the message "Error test successful." Defaults to 
+            false.
+
+--log		If set to false, no log files are written. Defaults to true.
+            Logs are always written to database.
+
+--help	Return this message and exit.
+`)
 
 // Dependencies
 const args = require('minimist')(process.argv.slice(2))
-if (args.help) {
+
+if (args.help || args.h) {
     console.log(HELP)
     exit(0)
 }
-const HTTP_PORT = process.argv.slice(2).port || 5000
-// Run with argument "--help"
-
-const express = require('express')
+const HTTP_PORT = (args.port >= 1 && args.port <=65535) ? args.port : 5555
+const DEBUG = args.debug
 const app = express()
 
+if (args.log!=false) {
+    const accessLog = fs.createWriteStream('access.log', { flags: 'a' })
+    // Set up the access logging middleware
+    app.use(morgan('combined', { stream: accessLog }))
+}
 // Start an app server
 const server = app.listen(HTTP_PORT, () => {
     console.log('App listening on port %PORT%'.replace('%PORT%', HTTP_PORT))
 });
 
+// Middleware function to insert logs into database
+app.use((req, res, next)=> {
+    // Middleware
+    let logdata = {
+        remoteaddr: req.ip,
+        remoteuser: req.user, // May not work...
+        time: Date.now(),
+        method: req.method,
+        url: req.url,
+        protocol: req.protocol,
+        httpversion: req.httpVersion,
+        status: res.statusCode,
+        referer: req.headers['referer'],
+        useragent: req.headers['user-agent']
+    }
+
+    // SQL command to insert the above info into access log
+    const stmt = db.prepare(`INSERT INTO accesslog VALUES (
+                            @remoteaddr, 
+                            @remoteuser, 
+                            @time, 
+                            @method, 
+                            @url, 
+                            @protocol, 
+                            @httpversion, 
+                            @status, 
+                            @referer, 
+                            @useragent)`)
+    stmt.run(logdata)
+
+    next()
+});
+
+if (DEBUG) {
+
+    app.get('/app/log/access', (req, res) => {
+        const accesses = db.prepare('SELECT * FROM accesslog').all()
+        res.status(200).json(accesses)
+    });
+
+    app.get('/app/error', (req, res) => {
+        throw new Error("Error test successful.")
+    });
+}
 // Check endpoint /app/flip/call/heads/
 app.get('/app/flip/call/heads/', (req, res)=> {
     // Respond with status 200

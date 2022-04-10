@@ -36,7 +36,9 @@ const HTTP_PORT = (args.port >= 1 && args.port <=65535) ? args.port : 5555
 const DEBUG = args.debug
 const app = express()
 
-if (args.log!=false) {
+// Do not create a log file
+if (args.log!="false") {
+    console.log("Creating access log")
     const accessLog = fs.createWriteStream('access.log', { flags: 'a' })
     // Set up the access logging middleware
     app.use(morgan('combined', { stream: accessLog }))

@@ -65,27 +65,34 @@ app.use((req, res, next) => {
     }
 
     // SQL command to insert the above info into access log
-    const stmt = db.prepare(`INSERT INTO accesslog VALUES (
-                            @remoteaddr, 
-                            @remoteuser, 
-                            @time, 
-                            @method, 
-                            @url, 
-                            @protocol, 
-                            @httpversion, 
-                            @status, 
-                            @referer, 
-                            @useragent)`)
-    stmt.run(logdata)
-
+    const stmt = db.prepare(`INSERT INTO accesslog (
+                            remoteaddr, 
+                            remoteuser, 
+                            time, 
+                            method, 
+                            url, 
+                            protocol, 
+                            httpversion, 
+                            status, 
+                            referer, 
+                            useragent) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            `)
+    stmt.run(logdata.remoteaddr, logdata.remoteuser, logdata.time, logdata.method, logdata.url, 
+        logdata.protocol, logdata.httpversion, logdata.status, logdata.referer, logdata.useragent);
     next()
 });
 
 if (DEBUG) {
 
     app.get('/app/log/access', (req, res) => {
-        const accesses = db.prepare('SELECT * FROM accesslog').all()
-        res.status(200).json(accesses)
+        try {
+            const accesses = db.prepare('SELECT * FROM accesslog').all()
+            res.status(200).json(accesses)
+        } catch (e) {
+            console.error(e)
+        }
+
 
     });
 

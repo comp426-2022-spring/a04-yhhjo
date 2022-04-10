@@ -11,7 +11,7 @@ const stmt = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' and n
 let row = stmt.get();
 if (row === undefined) {
     console.log('Initializing accesslog.db...');
-    
+
     // SQL initialization string
     const sqlInit = `
         CREATE TABLE accesslog (
@@ -26,16 +26,16 @@ if (row === undefined) {
             status INTEGER,
             referer TEXT,
             useragent TEXT );
-        `   
+        `
 
-// Execute SQL commands above
+    // Execute SQL commands above
     db.exec(sqlInit);
 
-// Echo information about what we just did to the console.
+    // Echo information about what we just did to the console.
     console.log('Your database has been initialized');
 } else {
-// Since the database already exists, echo that to the console.
+    // Since the database already exists, echo that to the console.
     console.log('Database exists.')
 }
 
-export {db};
+export { db };

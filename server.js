@@ -3,7 +3,7 @@ import { coinFlip, coinFlips, flipACoin, countFlips } from "./modules/coin.mjs";
 import { createRequire } from 'module';
 import { exit } from "process";
 const require = createRequire(import.meta.url);
-import {db} from './modules/database.mjs'
+import { db } from './modules/database.mjs'
 const express = require('express')
 const fs = require('fs')
 const morgan = require('morgan')
@@ -32,12 +32,12 @@ if (args.help || args.h) {
     console.log(HELP)
     exit(0)
 }
-const HTTP_PORT = (args.port >= 1 && args.port <=65535) ? args.port : 5555
+const HTTP_PORT = (args.port >= 1 && args.port <= 65535) ? args.port : 5555
 const DEBUG = args.debug
 const app = express()
 
 // Do not create a log file
-if (args.log!="false") {
+if (args.log != "false") {
     console.log("Creating access log")
     const accessLog = fs.createWriteStream('access.log', { flags: 'a' })
     // Set up the access logging middleware
@@ -49,7 +49,7 @@ const server = app.listen(HTTP_PORT, () => {
 });
 
 // Middleware function to insert logs into database
-app.use((req, res, next)=> {
+app.use((req, res, next) => {
     // Middleware
     let logdata = {
         remoteaddr: req.ip,
@@ -86,6 +86,7 @@ if (DEBUG) {
     app.get('/app/log/access', (req, res) => {
         const accesses = db.prepare('SELECT * FROM accesslog').all()
         res.status(200).json(accesses)
+
     });
 
     app.get('/app/error', (req, res) => {
@@ -93,7 +94,7 @@ if (DEBUG) {
     });
 }
 // Check endpoint /app/flip/call/heads/
-app.get('/app/flip/call/heads/', (req, res)=> {
+app.get('/app/flip/call/heads/', (req, res) => {
     // Respond with status 200
     res.statusCode = 200;
     res.statusMessage = "OK"
@@ -102,7 +103,7 @@ app.get('/app/flip/call/heads/', (req, res)=> {
 });
 
 // Check endpoint /app/flip/call/tails/
-app.get('/app/flip/call/tails/', (req, res)=> {
+app.get('/app/flip/call/tails/', (req, res) => {
     // Respond with status 200
     res.statusCode = 200;
     res.statusMessage = "OK"
@@ -111,11 +112,11 @@ app.get('/app/flip/call/tails/', (req, res)=> {
 });
 
 // Check endpoint /app/flips/param:[number]
-app.get('/app/flips/:number', (req, res)=> {
+app.get('/app/flips/:number', (req, res) => {
     const raw = coinFlips(req.params.number)
     const summary = countFlips(raw)
     const response = {
-        raw: raw, 
+        raw: raw,
         summary: summary
     }
     // Respond with status 200
@@ -126,7 +127,7 @@ app.get('/app/flips/:number', (req, res)=> {
 });
 
 // Check endpoint /app/flip/
-app.get('/app/flip/', (req, res)=> {
+app.get('/app/flip/', (req, res) => {
     // Respond with status 200
     res.statusCode = 200;
     res.statusMessage = "OK"

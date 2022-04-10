@@ -14,10 +14,11 @@ if (row === undefined) {
     
     // SQL initialization string
     const sqlInit = `
-        CREATE TABLE accesslog ( 
+        CREATE TABLE accesslog (
+            id INTEGER PRIMARY KEY, 
             remoteaddr TEXT,
             remoteuser TEXT, 
-            time INTEGER PRIMARY KEY, 
+            time INTEGER, 
             method TEXT,
             url TEXT,
             protocol TEXT,
